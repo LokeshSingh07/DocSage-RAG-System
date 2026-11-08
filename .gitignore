@@ -1,0 +1,12 @@
+.github
+
+.env
+.env.example
+.venv
+
+__pycache__
+
+/create_structure.py
+/rag-system.db
+/sample_test.txt
+
