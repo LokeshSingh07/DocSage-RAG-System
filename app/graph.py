@@ -9,6 +9,12 @@ from typing import TypedDict, Optional, Literal
 from rich import print
 import json
 
+
+NO_PASSAGES_MSG = "I couldn't find anything relevant in your documents."
+NOT_ANSWERED_MSG = "I found related passages, but they don't answer your question."
+MAX_HISTORY_CHARS = 2000
+
+
 # state
 class State(TypedDict):
     question: str
@@ -68,11 +74,12 @@ def parse_llm_reply(text: str) -> dict:
 
 def generate(state):
     # TODO: add history
+    
     raw = ask_llm(state["question"], state["passages"], history=state["history"])
     reply = parse_llm_reply(raw)
     if not reply.get("found"):
         return {
-            "answer": "I could not find an answer in your documents.",
+            "answer": NOT_ANSWERED_MSG,
             "status": "no_answer",
         }
 
@@ -83,7 +90,7 @@ def generate(state):
 # step 3.2: no answer
 def no_answer(state):
     return {
-        "answer": "I could not produce a valid answer. Please try rephrasing your question.",
+        "answer": NO_PASSAGES_MSG,
         "status": "no_answer"
     }
 

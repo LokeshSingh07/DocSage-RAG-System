@@ -1,6 +1,8 @@
 import logging
 import time
+from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
+
 from app.core.config import get_settings as settings
 from pinecone import Pinecone, ServerlessSpec
 from app.rag.embedding import embed
@@ -68,12 +70,19 @@ def upsert(
         groups: list[str], 
         owner: str,
         filename="",
-        batch_size: int = 100
+        batch_size: int = 100,
+        embed_workers: int = 8,
+        upload_workers: int = 4,
     ):
+
+    # 1. Embed in parallel (pool.map keeps the same order as chunks)
+    with ThreadPoolExecutor(max_workers=min(embed_workers, len(chunks))) as pool:
+        vectors = list(pool.map(embed, chunks))
+
     records = [
         {
             "id": f"{doc_id}#{i}",
-            "values": embed(chunk),
+            "values": vec,
             "metadata": {
                 "doc_id": doc_id,
                 "text": chunk,
@@ -81,11 +90,21 @@ def upsert(
                 "owner_sub": owner,
             },
         }
-        for i, chunk in enumerate(chunks)
+        for i, (chunk, vec) in enumerate(zip(chunks, vectors))
     ]
-    for i in range(0, len(records), batch_size):
-        index().upsert(vectors=records[i:i + batch_size], namespace=namespace(tenant))
 
+    # 2. Upload batches of 100, a few at a time
+    ns = namespace(tenant)
+    idx = index()
+    batches = [records[i:i + batch_size] for i in range(0, len(records), batch_size)]
+
+    def upload(batch):
+        idx.upsert(vectors=batch, namespace=ns)
+
+    with ThreadPoolExecutor(max_workers=min(upload_workers, len(batches))) as pool:
+        list(pool.map(upload, batches))
+
+    return len(records)
 
 
 # Search chunks in Pinecone
@@ -107,11 +126,30 @@ def search(tenant: str, query: str, groups: list[str], owner: str, limit: int = 
 
     min_relevance_score = settings().min_relevance_score
 
-    return [m.metadata["text"] for m in result.matches if m.score > min_relevance_score]
+    # return [m.metadata["text"] for m in result.matches if m.score > min_relevance_score]
+    
+    seen = set()
+    passages = []
+    for m in result.matches:
+        if m.score >= min_relevance_score:
+            text = m.metadata.get("text", "")
+            if text and text not in seen:
+                seen.add(text)
+                passages.append(text)
+    return passages
 
 
 
-# Delete chunks from Pinecone
+# Delete (all chunks of a document, however many)
 @trace("pinecone_delete")
 def delete(tenant: str, doc_id: str):
-    index().delete(ids=[f"{doc_id}#{i}" for i in range(100)], namespace=namespace(tenant))
+    idx, ns = index(), namespace(tenant)
+    deleted = 0
+
+    # list() pages through every ID that starts with "<doc_id>#"
+    for ids in idx.list(prefix=f"{doc_id}#", namespace=ns):
+        ids = list(ids)
+        for i in range(0, len(ids), 1000):          # Pinecone allows 1000 IDs per delete
+            idx.delete(ids=ids[i:i + 1000], namespace=ns)
+        deleted += len(ids)
+    return deleted
