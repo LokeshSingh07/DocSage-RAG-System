@@ -18,7 +18,7 @@ DOWNLOAD_DIR = Path("downloads")
 
 @trace("_load_docs")
 def _load_docs(key, data):
-    ext = key.split(".")[-1]
+    ext = key.split(".")[-1].lower()
 
     # make sure folder exist
     DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -33,9 +33,9 @@ def _load_docs(key, data):
 
     try:
         if ext == "pdf":
-            loader = PyPDFLoader(file_path)
+            loader = PyPDFLoader(str(file_path))
         else:
-            loader = TextLoader(file_path, encoding="utf-8")
+            loader = TextLoader(str(file_path), encoding="utf-8")
 
         return loader.load()
     except Exception as e:

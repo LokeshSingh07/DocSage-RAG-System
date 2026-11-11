@@ -37,7 +37,7 @@ def bedrock_chat_model(question: str, chunks: list[str], history: list = []):
         modelId=settings().bedrock_chat_model,
         system=[{'text': SYSTEM_PROMPT}],
         messages=messages,
-        inferenceConfig={"maxTokens": 1024, "temperature": 0.4},
+        inferenceConfig={"maxTokens": 512, "temperature": 0.0},
     )
     
     # print(f"RESPONSE =>\n\n {response}")

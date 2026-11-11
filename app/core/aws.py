@@ -1,8 +1,17 @@
 import boto3
+from botocore.config import Config
 from functools import lru_cache
 from app.core.config import get_settings as settings
 import uuid
 from app.core.observability import trace
+
+_BOTO_CONFIG = Config(
+    max_pool_connections=20,
+    connect_timeout=5,
+    read_timeout=30,
+    retries={"max_attempts": 2, "mode": "standard"},
+)
+
 
 @lru_cache()
 def client(service:str):
@@ -11,7 +20,8 @@ def client(service:str):
         service,
         region_name=s.aws_region,
         aws_access_key_id=s.aws_access_key_id,
-        aws_secret_access_key=s.aws_secret_access_key
+        aws_secret_access_key=s.aws_secret_access_key,
+        config=_BOTO_CONFIG,
     )
 
 

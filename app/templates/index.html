@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enterprise RAG System</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-2: #0b1220;
+      --border: #334155;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.85rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+
+    .dot.ok { background: var(--success); }
+    .dot.err { background: var(--danger); }
+
+    a.docs-link {
+      color: var(--primary);
+      text-decoration: none;
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface-2);
+    }
+
+    a.docs-link:hover {
+      border-color: var(--primary);
+    }
+
+    main {
+      flex: 1;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 880px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .subtitle {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: -10px;
+    }
+
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 28px 16px;
+      text-align: center;
+      cursor: pointer;
+      background: var(--surface-2);
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .dropzone.dragover {
+      border-color: var(--primary);
+      background: rgba(59, 130, 246, 0.08);
+    }
+
+    .dropzone p {
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+    }
+
+    .dropzone span {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .file-info {
+      font-size: 0.85rem;
+      padding: 10px 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      word-break: break-all;
+    }
+
+    button {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    button:hover:not(:disabled) {
+      background: var(--primary-hover);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    .task-item {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.82rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .task-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      text-transform: uppercase;
+    }
+
+    .badge-pending { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .badge-success { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+    .badge-error { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+    .badge-neutral { background: rgba(148, 163, 184, 0.15); color: var(--muted); }
+
+    /* Chat Panel */
+    .chat-card {
+      height: calc(100vh - 110px);
+      min-height: 520px;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 12px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .empty-state {
+      margin: auto;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      max-width: 340px;
+      line-height: 1.5;
+    }
+
+    .msg {
+      max-width: 85%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 0.92rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .msg.user {
+      align-self: flex-end;
+      background: var(--primary);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg.assistant {
+      align-self: flex-start;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+
+    .msg-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    details.sources {
+      margin-top: 10px;
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    details.sources summary {
+      cursor: pointer;
+      user-select: none;
+      color: var(--primary);
+    }
+
+    .source-chunk {
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.78rem;
+      line-height: 1.4;
+    }
+
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 5px 10px;
+      font-size: 0.78rem;
+      border-radius: 999px;
+    }
+
+    .chip:hover:not(:disabled) {
+      background: var(--surface);
+      color: var(--text);
+      border-color: var(--primary);
+    }
+
+    .chat-form {
+      display: flex;
+      gap: 10px;
+    }
+
+    .chat-form input[type="text"] {
+      flex: 1;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-size: 0.92rem;
+      outline: none;
+    }
+
+    .chat-form input[type="text"]:focus {
+      border-color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span>Enterprise RAG System</span>
+    </div>
+    <div class="header-actions">
+      <div class="pill" id="health-pill">
+        <span class="dot" id="health-dot"></span>
+        <span id="health-text">Checking...</span>
+      </div>
+      <a class="docs-link" href="/docs" target="_blank" rel="noopener">API Docs</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- Left Column: Document Upload -->
+    <section class="card">
+      <h2>Upload Document</h2>
+      <p class="subtitle">Supported: .pdf, .md, .txt (max 5 MB)</p>
+
+      <div class="dropzone" id="dropzone">
+        <p>Click to select or drag &amp; drop a file</p>
+        <span>Uploaded to S3 &amp; indexed via Celery</span>
+        <input type="file" id="file-input" accept=".pdf,.md,.txt" />
+      </div>
+
+      <div class="file-info" id="file-info">
+        <span id="file-name"></span>
+        <span id="file-size" style="color: var(--muted);"></span>
+      </div>
+
+      <button id="upload-btn" disabled>Upload &amp; Ingest</button>
+
+      <div>
+        <h2 style="font-size: 0.9rem; margin-bottom: 8px;">Ingestion Tasks</h2>
+        <div class="task-list" id="task-list">
+          <div style="font-size: 0.82rem; color: var(--muted);">No uploads yet.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Chat -->
+    <section class="card chat-card">
+      <h2>Ask Your Documents</h2>
+      <p class="subtitle">Powered by LangGraph, Pinecone &amp; AWS Bedrock</p>
+
+      <div class="messages" id="messages">
+        <div class="empty-state">
+          Upload a document on the left, wait for ingestion to succeed, then ask a question below.
+        </div>
+      </div>
+
+      <div class="suggestions">
+        <button type="button" class="chip" data-q="What is Pinecone?">What is Pinecone?</button>
+        <button type="button" class="chip" data-q="Summarize the uploaded document.">Summarize the uploaded document</button>
+      </div>
+
+      <form class="chat-form" id="chat-form">
+        <input type="text" id="question-input" placeholder="Ask a question..." autocomplete="off" required />
+        <button type="submit" id="ask-btn">Ask</button>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    const healthDot = document.getElementById("health-dot");
+    const healthText = document.getElementById("health-text");
+    const dropzone = document.getElementById("dropzone");
+    const fileInput = document.getElementById("file-input");
+    const fileInfo = document.getElementById("file-info");
+    const fileNameEl = document.getElementById("file-name");
+    const fileSizeEl = document.getElementById("file-size");
+    const uploadBtn = document.getElementById("upload-btn");
+    const taskList = document.getElementById("task-list");
+    const messagesEl = document.getElementById("messages");
+    const chatForm = document.getElementById("chat-form");
+    const questionInput = document.getElementById("question-input");
+    const askBtn = document.getElementById("ask-btn");
+
+    let selectedFile = null;
+    let firstUpload = true;
+    let firstMessage = true;
+
+    async function checkHealth() {
+      try {
+        const res = await fetch("/health");
+        if (res.ok) {
+          healthDot.className = "dot ok";
+          healthText.textContent = "Online";
+          return;
+        }
+      } catch (_) {}
+      healthDot.className = "dot err";
+      healthText.textContent = "Offline";
+    }
+    checkHealth();
+
+    // File selection & drag-and-drop
+    dropzone.addEventListener("click", () => fileInput.click());
+    dropzone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropzone.classList.add("dragover");
+    });
+    dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+    dropzone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropzone.classList.remove("dragover");
+      if (e.dataTransfer.files.length) selectFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length) selectFile(fileInput.files[0]);
+    });
+
+    function selectFile(file) {
+      selectedFile = file;
+      fileNameEl.textContent = file.name;
+      fileSizeEl.textContent = `${(file.size / 1024).toFixed(1)} KB`;
+      fileInfo.style.display = "flex";
+      uploadBtn.disabled = false;
+    }
+
+    function stateBadgeClass(state) {
+      if (state === "SUCCESS" || state === "answered") return "badge-success";
+      if (state === "FAILURE" || state === "blocked" || state === "error") return "badge-error";
+      if (state === "PENDING" || state === "STARTED" || state === "RETRY" || state === "QUEUED") return "badge-pending";
+      return "badge-neutral";
+    }
+
+    function addTaskItem(filename, taskId) {
+      if (firstUpload) {
+        taskList.innerHTML = "";
+        firstUpload = false;
+      }
+      const item = document.createElement("div");
+      item.className = "task-item";
+      item.innerHTML = `
+        <div class="task-top">
+          <strong>${escapeHtml(filename)}</strong>
+          <span class="badge badge-pending" data-badge>QUEUED</span>
+        </div>
+        <div style="color: var(--muted);">Task: ${escapeHtml(taskId)}</div>
+        <div data-detail style="color: var(--muted);"></div>
+      `;
+      taskList.prepend(item);
+      pollTask(taskId, item);
+    }
+
+    async function pollTask(taskId, itemEl) {
+      const badge = itemEl.querySelector("[data-badge]");
+      const detail = itemEl.querySelector("[data-detail]");
+
+      for (let attempt = 0; attempt < 30; attempt++) {
+        // Poll every 7 seconds (within 5-10s range)
+        await new Promise((r) => setTimeout(r, 7000));
+        try {
+          const res = await fetch(`/api/v1/document/process/${encodeURIComponent(taskId)}`, {
+            method: "POST"
+          });
+          const data = await res.json();
+          const state = data.state || "PENDING";
+          badge.textContent = state;
+          badge.className = `badge ${stateBadgeClass(state)}`;
+
+          if (state === "SUCCESS") {
+            if (data.result) {
+              detail.textContent = `doc_id: ${data.result.doc_id} | chunks: ${data.result.chunks}`;
+            }
+            return;
+          }
+          if (state === "FAILURE") {
+            detail.textContent = "Ingestion failed. Check Celery worker logs.";
+            return;
+          }
+        } catch (err) {
+          detail.textContent = "Polling error.";
+          return;
+        }
+      }
+    }
+
+    uploadBtn.addEventListener("click", async () => {
+      if (!selectedFile) return;
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = "Uploading...";
+
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
+      try {
+        const res = await fetch("/api/v1/document", {
+          method: "POST",
+          body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data.detail || "Upload failed");
+        } else {
+          addTaskItem(data.filename || selectedFile.name, data.task_id);
+          selectedFile = null;
+          fileInput.value = "";
+          fileInfo.style.display = "none";
+        }
+      } catch (err) {
+        alert("Upload failed: " + err.message);
+      } finally {
+        uploadBtn.textContent = "Upload & Ingest";
+        uploadBtn.disabled = !selectedFile;
+      }
+    });
+
+    // Chat handling
+    document.querySelectorAll(".chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        questionInput.value = chip.dataset.q;
+        questionInput.focus();
+      });
+    });
+
+    function appendMessage(role, text, meta = null) {
+      if (firstMessage) {
+        messagesEl.innerHTML = "";
+        firstMessage = false;
+      }
+      const div = document.createElement("div");
+      div.className = `msg ${role}`;
+
+      if (role === "assistant" && meta) {
+        const status = meta.status || "answered";
+        const badgeHtml = `<div class="msg-meta"><span class="badge ${stateBadgeClass(status)}">${escapeHtml(status)}</span></div>`;
+        let sourcesHtml = "";
+        if (Array.isArray(meta.sources) && meta.sources.length > 0) {
+          const chunks = meta.sources
+            .map((s, idx) => `<div class="source-chunk"><strong>Passage ${idx + 1}:</strong> ${escapeHtml(s)}</div>`)
+            .join("");
+          sourcesHtml = `<details class="sources"><summary>Sources (${meta.sources.length} passages)</summary>${chunks}</details>`;
+        }
+        div.innerHTML = `${badgeHtml}<div>${escapeHtml(text)}</div>${sourcesHtml}`;
+      } else {
+        div.textContent = text;
+      }
+
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return div;
+    }
+
+    chatForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const question = questionInput.value.trim();
+      if (!question) return;
+
+      appendMessage("user", question);
+      questionInput.value = "";
+      askBtn.disabled = true;
+      const loadingEl = appendMessage("assistant", "Thinking...");
+
+      try {
+        const res = await fetch(`/api/v1/chat/ask?question=${encodeURIComponent(question)}`);
+        const data = await res.json();
+        loadingEl.remove();
+
+        if (data.status === "error") {
+          appendMessage("assistant", data.error || "Request failed", { status: "error", sources: [] });
+        } else {
+          const result = data.result || {};
+          appendMessage("assistant", result.answer || "No response received.", {
+            status: result.status || "answered",
+            sources: result.sources || []
+          });
+        }
+      } catch (err) {
+        loadingEl.remove();
+        appendMessage("assistant", "Network error: " + err.message, { status: "error", sources: [] });
+      } finally {
+        askBtn.disabled = false;
+        questionInput.focus();
+      }
+    });
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+  </script>
+</body>
+</html>

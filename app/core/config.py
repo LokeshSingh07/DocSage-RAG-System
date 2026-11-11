@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     rius_disabled:bool = False
     rius_capture_content:bool = False
 
-    min_relevance_score:float = 0.3
+    min_relevance_score:float = 0.18
     hitl_enabled:bool = True
     memory_turns:int = 6
 
