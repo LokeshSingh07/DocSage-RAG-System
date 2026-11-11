@@ -1,10 +1,10 @@
 # load, splits into chunks, embeds, store in pinecone
 import logging
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from app.rag.embedding import embed
 from app.vector_pinecone import upsert
 from langchain_community.document_loaders import TextLoader, PyPDFLoader
 from app.core.aws import download_from_s3
+from app.core.observability import trace
 
 import os
 from pathlib import Path
@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 DOWNLOAD_DIR = Path("downloads")
 
 
+@trace("_load_docs")
 def _load_docs(key, data):
     ext = key.split(".")[-1]
 
@@ -44,7 +45,7 @@ def _load_docs(key, data):
         file_path.unlink(missing_ok=True)
     
 
-
+@trace("ingest")
 def ingest(key: str, tenant: str, doc_id: str, owner: str, groups: list[str]) -> dict:
     logger.info("Ingesting %s (doc_id=%s)", key, doc_id)
 
