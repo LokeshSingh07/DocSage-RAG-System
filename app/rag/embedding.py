@@ -1,11 +1,12 @@
 import json
 from app.core.config import get_settings as settings
 from app.core.aws import client
-
+from app.core.observability import trace
 
 # ===================================
 # embedding
 # ===================================
+@trace("bedrock_embedding")
 def embed(text):
     body = json.dumps({
         'inputText': text,

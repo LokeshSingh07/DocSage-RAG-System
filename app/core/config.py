@@ -40,6 +40,7 @@ class Settings(BaseSettings):
 
     llm_provider:str = "bedrock"
 
+    redis_url:str = 'redis://localhost:6379'
 
 
 

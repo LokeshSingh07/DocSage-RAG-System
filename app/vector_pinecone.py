@@ -4,6 +4,7 @@ from functools import lru_cache
 from app.core.config import get_settings as settings
 from pinecone import Pinecone, ServerlessSpec
 from app.rag.embedding import embed
+from app.core.observability import trace
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ def index():
 
 
     # 1. Check whether the index exists; create it if not
-    if not pc.has_index(name):
+    if name not in pc.list_indexes().names():
         log.info("Creating Pinecone index %s (dimension=%d, metric=cosine)", name, s.embed_dim)
         try:
             pc.create_index(
@@ -59,6 +60,7 @@ def namespace(tenant):
 
 
 # Upsert chunks into Pinecone
+@trace("pinecone_upsert")
 def upsert(
         tenant: str, 
         doc_id: str, 
@@ -87,6 +89,7 @@ def upsert(
 
 
 # Search chunks in Pinecone
+@trace("pinecone_search")
 def search(tenant: str, query: str, groups: list[str], owner: str, limit: int = 5):
     clauses = [{"owner_sub": {"$eq": owner}}]
     if groups:
@@ -109,5 +112,6 @@ def search(tenant: str, query: str, groups: list[str], owner: str, limit: int = 
 
 
 # Delete chunks from Pinecone
+@trace("pinecone_delete")
 def delete(tenant: str, doc_id: str):
     index().delete(ids=[f"{doc_id}#{i}" for i in range(100)], namespace=namespace(tenant))

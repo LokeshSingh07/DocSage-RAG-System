@@ -28,3 +28,7 @@ beautifulsoup4
 requests
 pydantic
 rich
+
+python-multipart
+celery 
+redis

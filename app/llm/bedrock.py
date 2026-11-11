@@ -1,7 +1,7 @@
 from app.core.config import get_settings as settings
 from app.core.aws import client
 from app.llm.prompt import SYSTEM_PROMPT
-
+from app.core.observability import trace
 
 
 MAX_MEMORY_TURN = settings().memory_turns
@@ -10,6 +10,7 @@ MAX_MEMORY_TURN = settings().memory_turns
 # ===================================
 # chat
 # ===================================
+@trace("bedrock_chat_model")
 def bedrock_chat_model(question: str, chunks: list[str], history: list = []):
     if not question or not question.strip():
         raise ValueError("Question cannot be empty")
