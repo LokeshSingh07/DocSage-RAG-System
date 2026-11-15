@@ -46,6 +46,8 @@ jobs:
     name: Build and Push to ECR
     runs-on: ubuntu-latest
     needs: python-syntax-check
+    environment: prod
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
