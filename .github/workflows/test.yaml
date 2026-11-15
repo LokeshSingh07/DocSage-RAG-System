@@ -50,6 +50,17 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Check secrets are visible
+        env:
+          R: ${{ secrets.AWS_REGION }}
+          K: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          S: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          E: ${{ secrets.ECR_REPOSITORY_NAME }}
+        run: |
+          for v in R K S E; do
+            if [ -z "${!v}" ]; then echo "$v is EMPTY"; else echo "$v is set"; fi
+          done
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
