@@ -1,0 +1,50 @@
+# Secrets and environment files
+.env
+.env.*
+*.pem
+*.key
+credentials*
+.aws/
+
+# Python junk
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Git and CI
+.git/
+.gitignore
+.github/
+
+# Docker files themselves
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Tests and docs
+tests/
+docs/
+*.md
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local data and logs
+*.log
+logs/
+tmp/
+uploads/
+*.sqlite3
