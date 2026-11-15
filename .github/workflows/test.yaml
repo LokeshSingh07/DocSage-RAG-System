@@ -1,0 +1,42 @@
+name: docsage RAG System
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - README.md
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docsage-deployment
+  cancel-in-progress: false
+
+
+jobs:
+  # ==========================================
+  # 1. PYTHON SYNTAX CHECK
+  # ==========================================
+  python-syntax-check:
+    name: Python Syntax Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check Python Syntax
+        run: |
+          python -m compileall -q app worker scripts
+          echo "Python syntax check passed"
+
+
+  
