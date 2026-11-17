@@ -4,6 +4,7 @@ Jinja2
 pydantic-settings
 boto3
 psycopg[binary, pool]
+argon2-cffi
 sqlalchemy
 alembic
 pypdf

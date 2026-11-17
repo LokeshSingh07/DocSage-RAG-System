@@ -60,6 +60,40 @@
       font-size: 0.85rem;
     }
 
+    .user-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px 3px 10px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+
+    .user-label {
+      color: var(--muted);
+      font-size: 0.8rem;
+      user-select: none;
+    }
+
+    .user-email-input {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.82rem;
+      padding: 3px 6px;
+      outline: none;
+      width: 175px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .user-email-input:focus {
+      background: var(--surface);
+      border-color: var(--primary);
+    }
+
     .pill {
       display: inline-flex;
       align-items: center;
@@ -364,6 +398,16 @@
       <span>Enterprise RAG System</span>
     </div>
     <div class="header-actions">
+      <div class="user-pill" title="Set email sent in X-User-Email header to identify you in the database">
+        <label for="user-email-input" class="user-label">👤 User:</label>
+        <input
+          type="email"
+          id="user-email-input"
+          class="user-email-input"
+          placeholder="your.email@example.com"
+          value="lokesh@gmail.com"
+        />
+      </div>
       <div class="pill" id="health-pill">
         <span class="dot" id="health-dot"></span>
         <span id="health-text">Checking...</span>
@@ -425,6 +469,7 @@
   <script>
     const healthDot = document.getElementById("health-dot");
     const healthText = document.getElementById("health-text");
+    const userEmailInput = document.getElementById("user-email-input");
     const dropzone = document.getElementById("dropzone");
     const fileInput = document.getElementById("file-input");
     const fileInfo = document.getElementById("file-info");
@@ -436,6 +481,20 @@
     const chatForm = document.getElementById("chat-form");
     const questionInput = document.getElementById("question-input");
     const askBtn = document.getElementById("ask-btn");
+
+    // Initialize user email from localStorage
+    const storedEmail = localStorage.getItem("rag_user_email");
+    if (storedEmail) {
+      userEmailInput.value = storedEmail;
+    }
+    userEmailInput.addEventListener("input", () => {
+      localStorage.setItem("rag_user_email", userEmailInput.value.trim());
+    });
+
+    function getAuthHeaders() {
+      const email = userEmailInput.value.trim();
+      return email ? { "X-User-Email": email } : {};
+    }
 
     let selectedFile = null;
     let firstUpload = true;
@@ -549,6 +608,7 @@
       try {
         const res = await fetch("/api/v1/document", {
           method: "POST",
+          headers: getAuthHeaders(),
           body: formData
         });
         const data = await res.json();
@@ -615,9 +675,16 @@
       const loadingEl = appendMessage("assistant", "Thinking...");
 
       try {
-        const res = await fetch(`/api/v1/chat/ask?question=${encodeURIComponent(question)}`);
+        const res = await fetch(`/api/v1/chat/ask?question=${encodeURIComponent(question)}`, {
+          headers: getAuthHeaders()
+        });
         const data = await res.json();
         loadingEl.remove();
+
+        if (!res.ok) {
+          appendMessage("assistant", data.detail || `Error (${res.status})`, { status: "error", sources: [] });
+          return;
+        }
 
         if (data.status === "error") {
           appendMessage("assistant", data.error || "Request failed", { status: "error", sources: [] });
