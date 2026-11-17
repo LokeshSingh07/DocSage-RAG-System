@@ -1,27 +1,40 @@
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, declarative_base
-from app.core.config import get_settings
+import logging
+from app.core.config import get_settings as settings
+from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
 
-engine = create_engine(get_settings().database_url)
-sessionLocal = sessionmaker(bind=engine)
+logger = logging.getLogger(__name__)
 
-Base = declarative_base()
+_pool = None
 
 
-def get_db():
+def get_db() -> ConnectionPool:
+    global _pool
+    if _pool is None:
+        _pool = ConnectionPool(
+            settings().database_url,
+            min_size=1,
+            max_size=10,
+            kwargs={"row_factory": dict_row},
+            open=True
+        )
+    return _pool
+
+
+def close_db():
+    global _pool
+    if _pool is not None:
+        _pool.close()
+        _pool = None
+
+
+def check_db_connection():
     try:
-        db = sessionLocal()
-        yield db
-    finally:
-        db.close()
-
-
-def check_db_connection() -> bool:
-    try:
-        with engine.connect() as connection:
-            connection.execute(text("SELECT 1"))
+        with get_db().connection() as conn:
+            conn.execute("SELECT 1")
         return True
+
     except Exception as e:
-        print(f"Database connection failed: {e}")
+        logger.warning(f"DB connection check failed: {e}")
         return False

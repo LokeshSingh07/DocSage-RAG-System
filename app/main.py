@@ -7,8 +7,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from app.core.db import engine, Base
 from app.core.observability import initialize
+from app.core.db import get_db, close_db, check_db_connection
+from app.core.init_db import init_db
 from app.api.documents import router as documents_router
 from app.api.chat import router as chat_router
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
 
 
-def _warmup_clients():
+def _warmup_clients(app: FastAPI):
     """Pre-build the Bedrock client and Pinecone index so the first request is fast."""
     try:
         from app.core.aws import client
@@ -24,8 +25,11 @@ def _warmup_clients():
 
         client("bedrock-runtime")
         index()
+        app.state.warmup_ok = True
+
         logger.info("Warmup complete")
     except Exception:
+        app.state.warmup_ok = False
         # warning level so a bad key or unreachable service shows up at startup
         logger.warning("Warmup failed", exc_info=True)
 
@@ -33,14 +37,19 @@ def _warmup_clients():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # ---- startup ----
-    Base.metadata.create_all(bind=engine)
     initialize()
-    threading.Thread(target=_warmup_clients, daemon=True).start()
+    
+    get_db()
+    init_db()
+
+    app.state.warmup_ok = False
+    threading.Thread(target=_warmup_clients, args=(app,), daemon=True).start()
 
     yield
 
     # ---- shutdown ----
-    engine.dispose()
+    logger.info("Shutting down...") 
+    close_db()
 
 
 app = FastAPI(
@@ -49,9 +58,7 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
-Base.metadata.create_all(bind=engine)
 
-initialize()
 
 
 
@@ -87,5 +94,15 @@ async def ui(request: Request):
 
 
 @app.get("/health")
-async def health():
-    return {"status": "OK"}
+async def health(request: Request):
+    db_ok = check_db_connection()
+    warmup_ok = getattr(request.app.state, "warmup_ok", False)
+    ready = db_ok and warmup_ok
+    return JSONResponse(
+        {
+            "status": "OK" if ready else "DEGRADED",
+            "database": db_ok,
+            "clients": warmup_ok,
+        },
+        status_code=200 if ready else 503,
+    )

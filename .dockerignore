@@ -48,3 +48,5 @@ logs/
 tmp/
 uploads/
 *.sqlite3
+setup.md
+aws.md

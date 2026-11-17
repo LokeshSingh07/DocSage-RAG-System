@@ -1,10 +1,8 @@
 """Privacy-first Rius tracing. No telemetry is sent without RIUS_API_KEY."""
 import logging
-from dotenv import load_dotenv
 import rius
 from app.core.config import get_settings as settings
 
-load_dotenv()
 
 log = logging.getLogger(__name__)
 
