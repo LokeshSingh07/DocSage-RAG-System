@@ -1,0 +1,36 @@
+x-app-common: &app-common
+  image: ${DOCSAGE_IMAGE:-docsage:latest}       
+  restart: unless-stopped
+  env_file:
+    - .env
+  volumes:
+    - app_data:/data
+  depends_on:
+    redis:
+      condition: service_healthy
+
+services:
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    <<: *app-common
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+
+  worker:
+    <<: *app-common
+    command: celery -A worker.celery_app worker --loglevel=info
+
+volumes:
+  redis_data:
+  app_data:

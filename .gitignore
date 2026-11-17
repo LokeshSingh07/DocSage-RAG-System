@@ -1,10 +1,11 @@
 .env
 .env.example
 .venv
-
+*.env
 __pycache__
 
 /create_structure.py
 /rag-system.db
 /sample_test.txt
-
+/setup.md
+/aws.md
