@@ -5,6 +5,7 @@ from app.vector_pinecone import upsert
 from langchain_community.document_loaders import TextLoader, PyPDFLoader
 from app.core.aws import download_from_s3
 from app.core.observability import trace
+from app.repository.document_query import update_document_status
 
 import os
 from pathlib import Path
@@ -49,26 +50,35 @@ def _load_docs(key, data):
 def ingest(key: str, tenant: str, doc_id: str, owner: str, groups: list[str]) -> dict:
     logger.info("Ingesting %s (doc_id=%s)", key, doc_id)
 
-    # 1. download from s3
-    data = download_from_s3(key)
+    try:
+        update_document_status(doc_id, "processing")
 
-    # 2. extract text -> check he extension and load accordingly, pdf -> PyPDFLoader, txt -> TextLoader, but it take path so we need to save it first
-    docs = _load_docs(key, data)
+        # 1. download from s3
+        data = download_from_s3(key)
 
-    # 3. splits into chunks
-    splitters = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    chunks = splitters.split_documents(docs)
+        # 2. extract text -> check he extension and load accordingly, pdf -> PyPDFLoader, txt -> TextLoader, but it take path so we need to save it first
+        docs = _load_docs(key, data)
 
-    # print("chunks", chunks)
+        # 3. splits into chunks
+        splitters = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        chunks = splitters.split_documents(docs)
 
-    # 4. store in pinecone
-    upsert(
-        tenant=tenant,
-        doc_id=doc_id,
-        chunks=[chunk.page_content for chunk in chunks],
-        groups=groups,
-        owner=owner,
-        filename=key
-    )
+        # print("chunks", chunks)
 
-    return {"doc_id": doc_id, "chunks": len(chunks)}
+        # 4. store in pinecone
+        upsert(
+            tenant=tenant,
+            doc_id=doc_id,
+            chunks=[chunk.page_content for chunk in chunks],
+            groups=groups,
+            owner=owner,
+            filename=key
+        )
+
+
+        update_document_status(doc_id, "ready")
+
+        return {"doc_id": doc_id, "chunks": len(chunks)}
+    except Exception:
+        update_document_status(doc_id, "failed")
+        return {"doc_id": doc_id, "chunks": 0}
