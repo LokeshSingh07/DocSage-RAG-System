@@ -118,8 +118,8 @@ flowchart TD
 
 1. **Clone the repository and set up a virtual environment:**
    ```bash
-   git clone <repo-url>
-   cd RAG_system
+   git clone https://github.com/LokeshSingh07/DocSage-RAG-System.git
+   cd DocSage-RAG-System
    python3 -m venv .venv
    source .venv/bin/activate
    ```
@@ -220,7 +220,7 @@ docker compose up --build
 | Method | Path | Description |
 | :--- | :--- | :--- |
 | `POST` | `/api/v1/document` | Upload `.pdf`, `.md`, or `.txt` to S3 and queue Celery ingestion |
-| `POST` | `/api/v1/document/process/{task_id}` | Check Celery ingestion task status and result |
+| `GET` | `/api/v1/document/process/{task_id}` | Check Celery ingestion task status and result |
 | `GET` | `/api/v1/document/my-documents` | List all uploaded documents and live DB status for current user |
 | `GET` | `/api/v1/document/status/{document_id}` | Fetch document details by UUID |
 
@@ -251,7 +251,7 @@ curl -X POST "http://127.0.0.1:8000/api/v1/document" \
 
 ### 2. Check Ingestion Task Status
 ```bash
-curl -X POST "http://127.0.0.1:8000/api/v1/document/process/<task_id>"
+curl -X GET "http://127.0.0.1:8000/api/v1/document/process/<task_id>"
 ```
 
 ### 3. Ask a Question (with Conversational Memory)
@@ -270,3 +270,14 @@ curl -X GET "http://127.0.0.1:8000/api/v1/chat/ask?question=What+was+my+previous
 curl -X GET "http://127.0.0.1:8000/api/v1/chat/history/<conversation_id>" \
      -H "X-User-Email: user@example.com"
 ```
+
+---
+
+## Author & Developer
+
+**Lokesh Singh**
+Full-Stack Developer who handles the boring stuff so users don't have to. 😄
+
+- **Portfolio**: [codewithlokesh.com](https://codewithlokesh.com)
+- **GitHub**: [@LokeshSingh07](https://github.com/LokeshSingh07)
+

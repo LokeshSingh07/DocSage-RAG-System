@@ -629,7 +629,7 @@
       for (let attempt = 0; attempt < 30; attempt++) {
         await new Promise((r) => setTimeout(r, 7000)); // poll every 7s
         try {
-          const res = await fetch(`/api/v1/document/process/${encodeURIComponent(taskId)}`, { method: "POST" });
+          const res = await fetch(`/api/v1/document/process/${encodeURIComponent(taskId)}`);
           const data = await res.json();
           const state = data.state || "PENDING";
           badge.textContent = state;

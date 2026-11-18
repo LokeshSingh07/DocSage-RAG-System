@@ -67,7 +67,7 @@ def upload_document(file: UploadFile = File(...), principal: Principal = Depends
 # =============================================================
 # RAG Ingestion Status
 # =============================================================
-@router.post("/process/{task_id}")
+@router.get("/process/{task_id}")
 def document_status(task_id: str):
     try:
         result = ingest_task.AsyncResult(task_id)
