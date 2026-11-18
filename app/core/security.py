@@ -23,14 +23,6 @@ class Principal:
 def get_principal(
     x_user_email: Annotated[str | None, Header(alias="X-User-Email")] = None,
 ) -> Principal:
-    """
-    FastAPI dependency that fetches user information from the database and constructs a Principal.
-
-    - If 'X-User-Email' is provided, fetches the user by email.
-    - If 'X-User-Id' is provided, fetches the user by UUID.
-    - If neither is provided, falls back to the default/primary user in the database (useful for local dev and testing).
-    - If no matching user is found, raises HTTPException(401).
-    """
     user = None
 
     if x_user_email is not None:
